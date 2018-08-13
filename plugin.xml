@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-video-editorbycc" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>VideoEditorByCC</name>
+    <description>A plugin to assist in video compress tasks</description>
+    <keywords>cordova,video,compress,transcoding,encoding,CCSDK</keywords>
+    <license>MIT for iOS, GPL for Android, Apache 2.0 for Windows</license>
+
+    <engines>
+        <engine name="cordova" version=">=3.0.0" />
+    </engines>
+
+    <!-- android -->
+    <platform name="android">
+      <js-module name="VideoEditorByCC" src="www/VideoEditorByCC.js">
+        <clobbers target="cordova.plugins.VideoEditorByCC"/>
+      </js-module>
+
+      <config-file target="config.xml" parent="/*">
+        <feature name="VideoEditorByCC">
+            <param name="android-package" value="org.apache.cordova.videoeditorbycc.VideoEditorByCC" />
+        </feature>
+      </config-file>
+
+      <!-- add plugin class -->
+      <source-file src="src/android/VideoEditorByCC.java" target-dir="src/org/apache/cordova/videoeditorbycc" />
+      <source-file src="src/android/compress/InputSurface.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
+      <source-file src="src/android/compress/MP4Builder.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
+      <source-file src="src/android/compress/Mp4Movie.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
+      <source-file src="src/android/compress/OutputSurface.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
+      <source-file src="src/android/compress/Sample.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
+      <source-file src="src/android/compress/TextureRenderer.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
+      <source-file src="src/android/compress/Track.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
+      <source-file src="src/android/compress/VideoCompress.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
+      <source-file src="src/android/compress/VideoController.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
+
+      <!--add libs-->
+      <source-file src="src/android/libs/aspectjrt-1.7.3.jar" target-dir="libs" />
+      <source-file src="src/android/libs/ccsdk.jar" target-dir="libs" />
+      <source-file src="src/android/libs/ijkjava.jar" target-dir="libs" />
+      <source-file src="src/android/libs/isoparser-1.0.6.jar" target-dir="libs" />
+      <source-file src="src/android/libs/org.apache.http.legacy.jar" target-dir="libs" />
+
+      <framework src="src/android/editorbycc.gradle" custom="true" type="gradleReference" />
+    </platform>
+</plugin>
