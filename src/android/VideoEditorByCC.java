@@ -160,7 +160,16 @@ public class VideoEditorByCC extends CordovaPlugin {
             inFile.delete();
           }
 
-          callback.success(outputFilePath);
+          JSONObject jsonObj = new JSONObject();
+          try {
+            jsonObj.put("status", 400);
+            jsonObj.put("result", outputFilePath);
+          } catch (JSONException e) {
+            e.printStackTrace();
+            callback.error(e.toString());
+          }
+
+          callback.success(jsonObj);
         }
 
         @Override
@@ -176,6 +185,7 @@ public class VideoEditorByCC extends CordovaPlugin {
 
           JSONObject jsonObj = new JSONObject();
           try {
+            jsonObj.put("status", 200);
             jsonObj.put("progress", percent);
           } catch (JSONException e) {
             e.printStackTrace();
