@@ -267,19 +267,19 @@ public void scheduleVideoConvert(String path, String dest) {
         switch (quality) {
             default:
             case COMPRESS_QUALITY_HIGH:
-                resultWidth = originalWidth * 2 / 3;
-                resultHeight = originalHeight * 2 / 3;
-                bitrate = resultWidth * resultHeight * 6;
+                resultWidth = 960;
+                resultHeight = 540;
+                bitrate = 1000000;
                 break;
             case COMPRESS_QUALITY_MEDIUM:
-                resultWidth = originalWidth / 2;
-                resultHeight = originalHeight / 2;
-                bitrate = resultWidth * resultHeight * 10;
+                resultWidth = 960;
+                resultHeight = 540;
+                bitrate = 1000000;
                 break;
             case COMPRESS_QUALITY_LOW:
-                resultWidth = originalWidth / 2;
-                resultHeight = originalHeight / 2;
-                bitrate = (resultWidth/2) * (resultHeight/2) * 10;
+                resultWidth = 960;
+                resultHeight = 540;
+                bitrate = 1000000;
                 break;
         }
 
