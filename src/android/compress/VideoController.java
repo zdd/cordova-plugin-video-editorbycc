@@ -23,6 +23,7 @@ public class VideoController {
     static final int COMPRESS_QUALITY_HIGH = 1;
     static final int COMPRESS_QUALITY_MEDIUM = 2;
     static final int COMPRESS_QUALITY_LOW = 3;
+    static final int COMPRESS_QUALITY_CUSTOMIZE = 4;
 
     public static File cachedFile;
     public String path;
@@ -120,7 +121,7 @@ public class VideoController {
 
         @Override
         public void run() {
-            VideoController.getInstance().convertVideo(videoPath, destPath, 0, null);
+            VideoController.getInstance().convertVideo(videoPath, destPath, "", "", "", 0, null);
         }
     }
 
@@ -153,7 +154,7 @@ public class VideoController {
      * @param dest destination directory to put result
      */
 
-public void scheduleVideoConvert(String path, String dest) {
+    public void scheduleVideoConvert(String path, String dest) {
         startVideoConvertFromQueue(path, dest);
     }
 
@@ -244,7 +245,7 @@ public void scheduleVideoConvert(String path, String dest) {
      * @return
      */
     @TargetApi(16)
-    public boolean  convertVideo(final String sourcePath, String destinationPath, int quality, CompressProgressListener listener) {
+    public boolean convertVideo(final String sourcePath, String destinationPath, String videoWidth, String videoHeight, String videoBitrate, int quality, CompressProgressListener listener) {
         this.path=sourcePath;
 
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
@@ -267,19 +268,24 @@ public void scheduleVideoConvert(String path, String dest) {
         switch (quality) {
             default:
             case COMPRESS_QUALITY_HIGH:
-                resultWidth = 960;
-                resultHeight = 540;
-                bitrate = 1000000;
+                resultWidth = originalWidth * 2 / 3;
+                resultHeight = originalHeight * 2 / 3;
+                bitrate = resultWidth * resultHeight * 6;
                 break;
             case COMPRESS_QUALITY_MEDIUM:
-                resultWidth = 960;
-                resultHeight = 540;
-                bitrate = 1000000;
+                resultWidth = originalWidth / 2;
+                resultHeight = originalHeight / 2;
+                bitrate = resultWidth * resultHeight * 10;
                 break;
             case COMPRESS_QUALITY_LOW:
-                resultWidth = 960;
-                resultHeight = 540;
-                bitrate = 1000000;
+                resultWidth = originalWidth / 2;
+                resultHeight = originalHeight / 2;
+                bitrate = (resultWidth/2) * (resultHeight/2) * 10;
+                break;
+            case COMPRESS_QUALITY_CUSTOMIZE:
+                resultWidth = Integer.valueOf(videoWidth);
+                resultHeight = Integer.valueOf(videoHeight);
+                bitrate = Integer.valueOf(videoBitrate);
                 break;
         }
 

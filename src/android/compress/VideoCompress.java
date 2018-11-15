@@ -13,19 +13,25 @@ public class VideoCompress {
 
     public static VideoCompressTask compressVideoHigh(String srcPath, String destPath, CompressListener listener) {
         VideoCompressTask task = new VideoCompressTask(listener, VideoController.COMPRESS_QUALITY_HIGH);
-        task.execute(srcPath, destPath);
+        task.execute(srcPath, destPath, "", "", "");
         return task;
     }
 
     public static VideoCompressTask compressVideoMedium(String srcPath, String destPath, CompressListener listener) {
         VideoCompressTask task = new VideoCompressTask(listener, VideoController.COMPRESS_QUALITY_MEDIUM);
-        task.execute(srcPath, destPath);
+        task.execute(srcPath, destPath, "", "", "");
         return task;
     }
 
     public static VideoCompressTask compressVideoLow(String srcPath, String destPath, CompressListener listener) {
         VideoCompressTask task =  new VideoCompressTask(listener, VideoController.COMPRESS_QUALITY_LOW);
-        task.execute(srcPath, destPath);
+        task.execute(srcPath, destPath, "", "", "");
+        return task;
+    }
+
+    public static VideoCompressTask compressVideoCustomize(int videoWidth, int videoHeight, int videoBitrate, String srcPath, String destPath, CompressListener listener) {
+        VideoCompressTask task =  new VideoCompressTask(listener, VideoController.COMPRESS_QUALITY_CUSTOMIZE);
+        task.execute(srcPath, destPath, String.valueOf(videoWidth), String.valueOf(videoHeight), String.valueOf(videoBitrate));
         return task;
     }
 
@@ -48,7 +54,7 @@ public class VideoCompress {
 
         @Override
         protected Boolean doInBackground(String... paths) {
-            return VideoController.getInstance().convertVideo(paths[0], paths[1], mQuality, new VideoController.CompressProgressListener() {
+            return VideoController.getInstance().convertVideo(paths[0], paths[1], paths[2], paths[3], paths[4], mQuality, new VideoController.CompressProgressListener() {
                 @Override
                 public void onProgress(float percent) {
                     publishProgress(percent);

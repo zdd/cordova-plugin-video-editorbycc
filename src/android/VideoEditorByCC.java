@@ -5,8 +5,8 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
-
 import android.Manifest;
 import android.app.Activity;
 
@@ -14,13 +14,22 @@ import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
 import org.apache.cordova.videoeditorbycc.compress.VideoCompress;
+import org.apache.cordova.videoeditorbycc.upload.UploadInfo;
+import org.apache.cordova.videoeditorbycc.upload.UploadService;
+import org.apache.cordova.videoeditorbycc.util.ConfigUtil;
+import org.apache.cordova.videoeditorbycc.util.DataSet;
+import org.apache.cordova.videoeditorbycc.util.ParamsUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -28,10 +37,15 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.IBinder;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+
+import com.bokecc.sdk.mobile.exception.ErrorCode;
+import com.bokecc.sdk.mobile.upload.Uploader;
+import com.bokecc.sdk.mobile.upload.VideoInfo;
 
 /**
  * VideoCompress plugin for Android
@@ -40,17 +54,68 @@ public class VideoEditorByCC extends CordovaPlugin {
   private static final String TAG = "VideoEditorByCC";
   private CallbackContext callback;
   private Context appContext;
+  private UploadReceiver receiver;
+  private UploadService.UploadBinder binder;
+  private String currentUploadId = null;
+
+  @Override
+  protected void pluginInitialize() {
+    super.pluginInitialize();
+
+    appContext = cordova.getActivity().getApplicationContext();
+    DataSet.init(appContext);
+  }
 
   @Override
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
     Log.d(TAG, "execute method starting");
 
     this.callback = callbackContext;
-    appContext = cordova.getActivity().getApplicationContext();
+
+    if (receiver == null) {
+      receiver = new UploadReceiver();
+      cordova.getActivity().registerReceiver(receiver, new IntentFilter(ConfigUtil.ACTION_UPLOAD));
+    }
+    cordova.getActivity().bindService(new Intent(appContext, UploadService.class), serviceConnection, Context.BIND_AUTO_CREATE);
 
     if (action.equals("compressVideo")) {
       try {
         this.compressVideo(args);
+      } catch (Exception e) {
+        callback.error(e.toString());
+      }
+      return true;
+    } else if (action.equals("uploadVideo")) {
+      try {
+        this.uploadVideo(args);
+      } catch (Exception e) {
+        callback.error(e.toString());
+      }
+      return true;
+    } else if (action.equals("reUploadVideo")) {
+      try {
+        this.reUploadVideo();
+      } catch (Exception e) {
+        callback.error(e.toString());
+      }
+      return true;
+    } else if (action.equals("pauseUpload")) {
+      try {
+        this.pauseUpload(args);
+      } catch (Exception e) {
+        callback.error(e.toString());
+      }
+      return true;
+    } else if (action.equals("resumeUpload")) {
+      try {
+        this.resumeUpload(args);
+      } catch (Exception e) {
+        callback.error(e.toString());
+      }
+      return true;
+    } else if (action.equals("cancelUpload")) {
+      try {
+        this.cancelUpload(args);
       } catch (Exception e) {
         callback.error(e.toString());
       }
@@ -60,9 +125,35 @@ public class VideoEditorByCC extends CordovaPlugin {
     return false;
   }
 
+  @Override
+  public void onDestroy() {
+    super.onDestroy();
+
+    if (receiver != null) {
+      cordova.getActivity().unregisterReceiver(receiver);
+    }
+    cordova.getActivity().unbindService(serviceConnection);
+    DataSet.saveUploadData();
+  }
+
+  private ServiceConnection serviceConnection = new ServiceConnection() {
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+    }
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+      binder = (UploadService.UploadBinder) service;
+    }
+  };
+
+  /**
+   * 视频压缩
+   * @param args
+     */
   private void compressVideo(JSONArray args) {
     JSONObject options = args.optJSONObject(0);
-    Log.d(TAG, "options: " + options.toString());
+    Log.d(TAG, "compressVideo() options: " + options.toString());
 
     try {
       final File inFile = this.resolveLocalFileSystemURI(options.getString("fileUri"));
@@ -82,7 +173,6 @@ public class VideoEditorByCC extends CordovaPlugin {
       );
       final String outputExtension = ".mp4";
 
-//      final Context appContext = cordova.getActivity().getApplicationContext();
       final PackageManager pm = appContext.getPackageManager();
 
       ApplicationInfo ai;
@@ -130,6 +220,7 @@ public class VideoEditorByCC extends CordovaPlugin {
 //      final long videoDuration = options.optLong("duration", 0) * 1000 * 1000;
       final int quality = options.optInt("quality", 3);
 
+      // 视频压缩回调函数
       VideoCompress.CompressListener mCompressListener = new VideoCompress.CompressListener() {
         @Override
         public void onStart() {
@@ -139,7 +230,6 @@ public class VideoEditorByCC extends CordovaPlugin {
         @Override
         public void onSuccess() {
           Log.d(TAG, "onSuccess()");
-//          uploadVideo(uploadId, compressOutPut, videoInfo, mainSelectedItemPosition, subSelectedItemPosition);
 
           File outFile = new File(outputFilePath);
           if (!outFile.exists()) {
@@ -208,10 +298,253 @@ public class VideoEditorByCC extends CordovaPlugin {
         case 3:
           VideoCompress.compressVideoLow(videoSrcPath, outputFilePath, mCompressListener);
           break;
+        case 4:
+          int resultWidth = options.optInt("width", 960);
+          int resultHeight = options.optInt("height", 540);
+          int bitrate = options.optInt("bitrate", 1000000);
+          VideoCompress.compressVideoCustomize(resultWidth, resultHeight, bitrate, videoSrcPath, outputFilePath, mCompressListener);
+          break;
       }
     } catch (Exception e) {
       e.printStackTrace();
       callback.error(e.toString());
+    }
+  }
+
+  /**
+   * 视频上传方法
+   * @param args
+     */
+  private void uploadVideo(JSONArray args) {
+    try {
+      JSONObject options = args.optJSONObject(0);
+      Log.d(TAG, "uploadVideo() options: " + options.toString());
+
+      final String uploadId = UploadInfo.UPLOAD_PRE.concat(System.currentTimeMillis() + "");
+      final VideoInfo videoInfo = new VideoInfo();
+      videoInfo.setTitle(options.optString("title", ""));
+      videoInfo.setTags(options.optString("tag", ""));
+      videoInfo.setDescription(options.optString("desc", ""));
+      videoInfo.setCategoryId(options.optString("categoryId", ""));
+      videoInfo.setFilePath(options.optString("filePath", ""));
+
+      DataSet.addUploadInfo(new UploadInfo(uploadId, videoInfo, Uploader.WAIT, 0, null));
+      cordova.getActivity().sendBroadcast(new Intent(ConfigUtil.ACTION_UPLOAD));
+
+      if (binder.isStop()) {
+        Intent service = new Intent(appContext, UploadService.class);
+
+        service.putExtra("title", videoInfo.getTitle());
+        service.putExtra("tag", videoInfo.getTags());
+        service.putExtra("desc", videoInfo.getDescription());
+        service.putExtra("categoryId", videoInfo.getCategoryId());
+        service.putExtra("filePath", videoInfo.getFilePath());
+        service.putExtra("uploadId", uploadId);
+
+        cordova.getActivity().startService(service);
+      }
+    } catch (Exception e) {
+      callback.error(e.toString());
+    }
+  }
+
+  /**
+   * 在应用启动的时候调用此方法初始化数据库
+   */
+  private void initDB() {
+    DataSet.init(appContext);
+  }
+
+  /**
+   * 在导致上传中断的位置调用此方法，保存视频上传进度信息，以便进行断点续传
+   */
+  private void saveUploadInfo() {
+    DataSet.saveUploadData();
+  }
+
+  /**
+   * 若有未上传完成的视频，则触发断点续传
+   */
+  private void reUploadVideo() {
+    List<UploadInfo> uploadInfos = DataSet.getUploadInfos();
+
+    boolean flag = false;
+    // 获取数据库中存储的视频状态，若未上传完成，则触发断点续传
+    for (UploadInfo uploadInfo: uploadInfos) {
+      if (uploadInfo != null && (uploadInfo.getStatus() != Uploader.FINISH)) {
+        flag = true;
+        startUploadService(uploadInfo);
+        break;
+      }
+    }
+    if (!flag) {
+      Log.d(TAG, "不存在未上传完成的视频");
+      JSONObject jsonObj = new JSONObject();
+      try {
+        jsonObj.put("status", 500);
+        jsonObj.put("info", "不存在未上传完成的视频");
+        callback.error(jsonObj);
+      } catch (JSONException e) {
+        e.printStackTrace();
+        callback.error(e.toString());
+      }
+    }
+  }
+
+  private void startUploadService(UploadInfo uploadInfo) {
+    Intent service = new Intent(appContext, UploadService.class);
+    VideoInfo videoInfo = uploadInfo.getVideoInfo();
+    service.putExtra("title", videoInfo.getTitle());
+    service.putExtra("tag", videoInfo.getTags());
+    service.putExtra("desc", videoInfo.getDescription());
+    service.putExtra("filePath", videoInfo.getFilePath());
+    service.putExtra("uploadId", uploadInfo.getUploadId());
+
+    String videoId = videoInfo.getVideoId();
+    if (videoId != null && !"".equals(videoId)) {
+      service.putExtra("videoId", videoId);
+    }
+
+    cordova.getActivity().startService(service);
+  }
+
+  /**
+   * 暂停上传
+   */
+  private void pauseUpload(JSONArray args) {
+    try {
+      JSONObject options = args.optJSONObject(0);
+      Log.d(TAG, "pauseUpload() options: " + options.toString());
+      String uploadId = options.optString("uploadId", "");
+      int uploaderStatus = binder.getUploaderStatus();
+      if (uploaderStatus == Uploader.UPLOAD && uploadId.equals(currentUploadId)) {
+        binder.pause();
+
+        JSONObject jsonObj = new JSONObject();
+        try {
+          jsonObj.put("status", 200);
+          jsonObj.put("result", "pause success");
+        } catch (JSONException e) {
+          e.printStackTrace();
+          callback.error(e.toString());
+        }
+
+        callback.success(jsonObj);
+      }
+    } catch (Exception e) {
+      callback.error(e.toString());
+    }
+  }
+
+  /**
+   * 开始上传
+   */
+  private void resumeUpload(JSONArray args) {
+    try {
+      JSONObject options = args.optJSONObject(0);
+      Log.d(TAG, "resumeUpload() options: " + options.toString());
+      String uploadId = options.optString("uploadId", "");
+      if (uploadId.equals(currentUploadId)) {
+        binder.upload();
+      }
+    } catch (Exception e) {
+      callback.error(e.toString());
+    }
+  }
+
+  /**
+   * 取消上传
+   */
+  private void cancelUpload(JSONArray args) {
+    try {
+      JSONObject options = args.optJSONObject(0);
+      Log.d(TAG, "cancelUpload() options: " + options.toString());
+      String uploadId = options.optString("uploadId", "");
+
+      if (uploadId.equals(currentUploadId)) {
+        //  TODO(CC SDK BUG: 上传过程中取消会失败，取消之前需要先暂停)
+        binder.pause();
+        //通知service取消上传
+        if (!binder.isStop()) {
+          binder.cancle();
+        }
+
+        //删除记录
+        DataSet.removeUploadInfo(currentUploadId);
+
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("status", 200);
+        jsonObj.put("result", "cancel success");
+        callback.success(jsonObj);
+      }
+    } catch (Exception e) {
+      callback.error(e.toString());
+    }
+  }
+
+  /**
+   * 视频上传回调函数
+   */
+  private class UploadReceiver extends BroadcastReceiver {
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      try {
+        JSONObject jsonObj = new JSONObject();
+
+        String uploadId = intent.getStringExtra("uploadId");
+        if (uploadId != null) {
+          currentUploadId = uploadId;
+        }
+
+        // 上传中
+        int uploadStatus = intent.getIntExtra("status", ParamsUtil.INVALID);
+        if (uploadStatus == Uploader.UPLOAD) {
+          Log.d(TAG, "Uploader.UPLOAD");
+
+          int progress = intent.getIntExtra("progress", 0);
+          Log.d(TAG, "progress:" + progress);
+
+          jsonObj.put("status", Uploader.UPLOAD);
+          jsonObj.put("progress", progress);
+          jsonObj.put("uploadId", currentUploadId);
+
+          PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
+          progressResult.setKeepCallback(true);
+          callback.sendPluginResult(progressResult);
+        }
+       // 已上传
+       if (uploadStatus == Uploader.FINISH) {
+          Log.d(TAG, "Uploader.FINISH");
+
+          currentUploadId = null;
+          String videoId = intent.getStringExtra("videoId");
+          Log.d(TAG, "videoId: " + videoId);
+
+          jsonObj.put("status", Uploader.FINISH);
+          jsonObj.put("videoId", videoId);
+          jsonObj.put("info", "success");
+          callback.success(jsonObj);
+        }
+
+        // 若出现异常，提示用户处理
+        int errorCode = intent.getIntExtra("errorCode", ParamsUtil.INVALID);
+        if (errorCode == ErrorCode.NETWORK_ERROR.Value()) {
+          jsonObj.put("status", "500");
+          jsonObj.put("info", "网络异常，请检查");
+          callback.error(jsonObj);
+        } else if (errorCode == ErrorCode.PROCESS_FAIL.Value()) {
+          jsonObj.put("status", "500");
+          jsonObj.put("info", "上传失败，请重试");
+          callback.error(jsonObj);
+        } else if (errorCode == ErrorCode.INVALID_REQUEST.Value()) {
+          jsonObj.put("status", "500");
+          jsonObj.put("info", "上传失败，请检查账户信息");
+          callback.error(jsonObj);
+        }
+      } catch (Exception e) {
+        callback.error(e.toString());
+      }
     }
   }
 

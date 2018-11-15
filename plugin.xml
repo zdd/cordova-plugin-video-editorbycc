@@ -11,6 +11,8 @@
 
     <!-- android -->
     <platform name="android">
+      <preference name="CC_ACCOUNT_INFO" default="HGaTtrQdnZKHYuuOwcwePSBmf7CQiWj7;ECDE97EEF626D13E" />
+
       <js-module name="VideoEditorByCC" src="www/VideoEditorByCC.js">
         <clobbers target="cordova.plugins.VideoEditorByCC"/>
       </js-module>
@@ -18,7 +20,16 @@
       <config-file target="config.xml" parent="/*">
         <feature name="VideoEditorByCC">
             <param name="android-package" value="org.apache.cordova.videoeditorbycc.VideoEditorByCC" />
+            <param name="onload" value="true" />
         </feature>
+      </config-file>
+
+      <config-file target="AndroidManifest.xml" parent="/manifest/application">
+        <service
+          android:name="org.apache.cordova.videoeditorbycc.upload.UploadService"
+          android:enabled="true" >
+          <meta-data android:name="CC_ACCOUNT_INFO" android:value="$CC_ACCOUNT_INFO" />
+        </service>
       </config-file>
 
       <!-- add plugin class -->
@@ -32,6 +43,13 @@
       <source-file src="src/android/compress/Track.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
       <source-file src="src/android/compress/VideoCompress.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
       <source-file src="src/android/compress/VideoController.java" target-dir="src/org/apache/cordova/videoeditorbycc/compress" />
+      <source-file src="src/android/upload/DownloadInfo.java" target-dir="src/org/apache/cordova/videoeditorbycc/upload" />
+      <source-file src="src/android/upload/UploadInfo.java" target-dir="src/org/apache/cordova/videoeditorbycc/upload" />
+      <source-file src="src/android/upload/UploadService.java" target-dir="src/org/apache/cordova/videoeditorbycc/upload" />
+      <source-file src="src/android/util/ConfigUtil.java" target-dir="src/org/apache/cordova/videoeditorbycc/util" />
+      <source-file src="src/android/util/DataSet.java" target-dir="src/org/apache/cordova/videoeditorbycc/util" />
+      <source-file src="src/android/util/MediaUtil.java" target-dir="src/org/apache/cordova/videoeditorbycc/util" />
+      <source-file src="src/android/util/ParamsUtil.java" target-dir="src/org/apache/cordova/videoeditorbycc/util" />
 
       <!--add libs-->
       <source-file src="src/android/libs/aspectjrt-1.7.3.jar" target-dir="libs" />
