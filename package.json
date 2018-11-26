@@ -1,1 +1,29 @@
-{}
+{
+  "name": "cordova-plugin-video-editorbycc",
+  "description": "本插件是基于CC视频Android SDK实现。开发人员可基于此插件实现对接CC视频云服务平台，进行视频压缩、视频上传、暂停上传、继续上传、取消上传、断点续传操作。",
+  "version": "0.0.1",
+  "cordova": {
+    "id": "cordova-plugin-video-editorbycc",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "video",
+    "compress",
+    "transcoding",
+    "encoding",
+    "CCSDK",
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "engines": [
+    {
+      "name": "cordova",
+      "version": ">=3.0.0"
+    }
+  ],
+  "author": "",
+  "license": "MIT for iOS, GPL for Android, Apache 2.0 for Windows"
+}
