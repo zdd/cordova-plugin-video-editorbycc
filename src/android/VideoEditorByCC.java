@@ -127,13 +127,18 @@ public class VideoEditorByCC extends CordovaPlugin {
 
   @Override
   public void onDestroy() {
-    super.onDestroy();
+    try{
 
-    if (receiver != null) {
-      cordova.getActivity().unregisterReceiver(receiver);
+      super.onDestroy();
+
+      if (receiver != null) {
+        cordova.getActivity().unregisterReceiver(receiver);
+      }
+      cordova.getActivity().unbindService(serviceConnection);
+      DataSet.saveUploadData();
+    } catch (Exception e) {
+      e.printStackTrace();
     }
-    cordova.getActivity().unbindService(serviceConnection);
-    DataSet.saveUploadData();
   }
 
   private ServiceConnection serviceConnection = new ServiceConnection() {
