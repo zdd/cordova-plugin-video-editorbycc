@@ -406,7 +406,7 @@ public class VideoEditorByCC extends CordovaPlugin {
     service.putExtra("desc", videoInfo.getDescription());
     service.putExtra("filePath", videoInfo.getFilePath());
     service.putExtra("uploadId", uploadInfo.getUploadId());
-    service.putExtra("notifyUrl", uploadInfo.getNotifyUrl());
+    service.putExtra("notifyUrl", videoInfo.getNotifyUrl());
 
     String videoId = videoInfo.getVideoId();
     if (videoId != null && !"".equals(videoId)) {
@@ -516,7 +516,7 @@ public class VideoEditorByCC extends CordovaPlugin {
           jsonObj.put("status", Uploader.UPLOAD);
           jsonObj.put("progress", progress);
           jsonObj.put("uploadId", currentUploadId);
-          jsonObj.put("notifyUrl", intent.getStringExtra("notifyUrl", "notify url not found")); // For debug only.
+          jsonObj.put("notifyUrl", intent.getStringExtra("notifyUrl")); // For debug only.
 
           PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
           progressResult.setKeepCallback(true);
