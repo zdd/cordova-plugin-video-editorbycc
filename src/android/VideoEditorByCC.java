@@ -516,6 +516,7 @@ public class VideoEditorByCC extends CordovaPlugin {
           jsonObj.put("status", Uploader.UPLOAD);
           jsonObj.put("progress", progress);
           jsonObj.put("uploadId", currentUploadId);
+          jsonObj.put("zdd", "my name is zdd");
           jsonObj.put("notifyUrl", intent.getStringExtra("notifyUrl")); // For debug only.
 
           PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
