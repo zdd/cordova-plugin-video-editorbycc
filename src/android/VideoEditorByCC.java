@@ -332,6 +332,7 @@ public class VideoEditorByCC extends CordovaPlugin {
       videoInfo.setDescription(options.optString("desc", ""));
       videoInfo.setCategoryId(options.optString("categoryId", ""));
       videoInfo.setFilePath(options.optString("filePath", ""));
+      videoInfo.setNotifyUrl(options.optString("notifyUrl", ""));
 
       DataSet.addUploadInfo(new UploadInfo(uploadId, videoInfo, Uploader.WAIT, 0, null));
       cordova.getActivity().sendBroadcast(new Intent(ConfigUtil.ACTION_UPLOAD));
@@ -345,6 +346,7 @@ public class VideoEditorByCC extends CordovaPlugin {
         service.putExtra("categoryId", videoInfo.getCategoryId());
         service.putExtra("filePath", videoInfo.getFilePath());
         service.putExtra("uploadId", uploadId);
+        service.putExtra("notifyUrl", videoInfo.getNotifyUrl());
 
         cordova.getActivity().startService(service);
       }
@@ -404,6 +406,7 @@ public class VideoEditorByCC extends CordovaPlugin {
     service.putExtra("desc", videoInfo.getDescription());
     service.putExtra("filePath", videoInfo.getFilePath());
     service.putExtra("uploadId", uploadInfo.getUploadId());
+    service.putExtra("notifyUrl", uploadInfo.getNotifyUrl());
 
     String videoId = videoInfo.getVideoId();
     if (videoId != null && !"".equals(videoId)) {
@@ -513,6 +516,7 @@ public class VideoEditorByCC extends CordovaPlugin {
           jsonObj.put("status", Uploader.UPLOAD);
           jsonObj.put("progress", progress);
           jsonObj.put("uploadId", currentUploadId);
+          jsonObj.put("notifyUrl", intent.getStringExtra("notifyUrl", "notify url not found")); // For debug only.
 
           PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
           progressResult.setKeepCallback(true);

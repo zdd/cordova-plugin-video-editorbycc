@@ -141,6 +141,7 @@ public class UploadService extends Service {
 			videoInfo.setDescription(intent.getStringExtra("desc"));
 			videoInfo.setFilePath(intent.getStringExtra("filePath"));
 			videoInfo.setCategoryId(intent.getStringExtra("categoryId"));
+			videoInfo.setNotifyUrl(intent.getStringExtra("notifyUrl"));
 		} else {// 续传
 			videoInfo = DataSet.getUploadInfo(uploadId).getVideoInfo();
 		}
@@ -150,9 +151,6 @@ public class UploadService extends Service {
 		}
 
 		resetUploadService();
-
-//    ApplicationInfo appInfo = this.getPackageManager().getApplicationInfo(getPackageName(), PackageManager.GET_META_DATA);
-//    String msg=appInfo.metaData.getString("Data_Name");
 
     try {
       ComponentName cn = new ComponentName(this, UploadService.class);
@@ -165,15 +163,13 @@ public class UploadService extends Service {
       // 通知Upload receiver
       Intent broadCastIntent = new Intent(ConfigUtil.ACTION_UPLOAD);
       broadCastIntent.putExtra("uploadId", uploadId);
+      broadCastIntent.putExtra("notifyUrl", videoInfo.getNotifyUrl()); // For debug only.
       DataSet.updateUploadInfo(new UploadInfo(uploadId, videoInfo, Uploader.WAIT, progress, progressText));
       sendBroadcast(broadCastIntent);
       stop = false;
 
-  //		videoInfo.setUserId(ConfigUtil.USERID);
       videoInfo.setUserId(ccAccountInfo.split(";")[1]);
-      videoInfo.setNotifyUrl(ConfigUtil.NOTIFY_URL);
 
-//      uploader = new Uploader(videoInfo, ConfigUtil.API_KEY);
       uploader = new Uploader(videoInfo, ccAccountInfo.split(";")[0]);
       uploader.setUploadListener(uploadListenner);
       uploader.start();
@@ -184,7 +180,6 @@ public class UploadService extends Service {
 		Log.i("init " + videoInfo.getTitle(), "uploadId: " + uploadId);
 		return super.onStartCommand(intent, flags, startId);
 	}
-
 
 	@Override
 	public void onTaskRemoved(Intent rootIntent) {
