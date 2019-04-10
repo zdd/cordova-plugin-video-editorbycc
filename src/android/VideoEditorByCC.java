@@ -373,9 +373,11 @@ public class VideoEditorByCC extends CordovaPlugin {
    * 若有未上传完成的视频，则触发断点续传
    */
   private void reUploadVideo(JSONArray args) {
-    List<UploadInfo> uploadInfos = DataSet.getUploadInfos();
+    JSONObject options = args.optJSONObject(0);
     String ccUserId = options.optString("CCUserId", "");
     String ccUserKey = options.optString("CCUserKey", "");
+    
+    List<UploadInfo> uploadInfos = DataSet.getUploadInfos();
     boolean flag = false;
     // 获取数据库中存储的视频状态，若未上传完成，则触发断点续传
     for (UploadInfo uploadInfo: uploadInfos) {
