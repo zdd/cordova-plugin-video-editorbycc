@@ -94,7 +94,7 @@ public class VideoEditorByCC extends CordovaPlugin {
       return true;
     } else if (action.equals("reUploadVideo")) {
       try {
-        this.reUploadVideo();
+        this.reUploadVideo(args);
       } catch (Exception e) {
         callback.error(e.toString());
       }
