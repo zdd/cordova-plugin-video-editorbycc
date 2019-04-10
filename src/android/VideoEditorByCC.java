@@ -372,15 +372,16 @@ public class VideoEditorByCC extends CordovaPlugin {
   /**
    * 若有未上传完成的视频，则触发断点续传
    */
-  private void reUploadVideo() {
+  private void reUploadVideo(JSONArray args) {
     List<UploadInfo> uploadInfos = DataSet.getUploadInfos();
-
+    String ccUserId = options.optString("CCUserId", "");
+    String ccUserKey = options.optString("CCUserKey", "");
     boolean flag = false;
     // 获取数据库中存储的视频状态，若未上传完成，则触发断点续传
     for (UploadInfo uploadInfo: uploadInfos) {
       if (uploadInfo != null && (uploadInfo.getStatus() != Uploader.FINISH)) {
         flag = true;
-        startUploadService(uploadInfo);
+        startUploadService(uploadInfo, ccUserId, ccUserKey);
         break;
       }
     }
@@ -398,7 +399,7 @@ public class VideoEditorByCC extends CordovaPlugin {
     }
   }
 
-  private void startUploadService(UploadInfo uploadInfo) {
+  private void startUploadService(UploadInfo uploadInfo, String ccUserId, String ccUserKey) {
     Intent service = new Intent(appContext, UploadService.class);
     VideoInfo videoInfo = uploadInfo.getVideoInfo();
     service.putExtra("title", videoInfo.getTitle());
@@ -406,7 +407,8 @@ public class VideoEditorByCC extends CordovaPlugin {
     service.putExtra("desc", videoInfo.getDescription());
     service.putExtra("filePath", videoInfo.getFilePath());
     service.putExtra("uploadId", uploadInfo.getUploadId());
-    service.putExtra("notifyUrl", videoInfo.getNotifyUrl());
+    service.putExtra("CCUserID", ccUserId);
+    service.putExtra("CCUserKey", ccUserKey);
 
     String videoId = videoInfo.getVideoId();
     if (videoId != null && !"".equals(videoId)) {

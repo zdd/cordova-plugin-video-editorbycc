@@ -155,10 +155,7 @@ public class UploadService extends Service {
     try {
       ComponentName cn = new ComponentName(this, UploadService.class);
       ServiceInfo info = this.getPackageManager().getServiceInfo(cn, PackageManager.GET_META_DATA);
-      String ccAccountInfo = info.metaData.getString("CC_ACCOUNT_INFO");
-      Log.d("-------UploadService", "AccountInfo:" + ccAccountInfo);
-      Log.d("-------UploadService", "API_KEY:" + ccAccountInfo.split(";")[0]);
-      Log.d("-------UploadService", "USERID:" + ccAccountInfo.split(";")[1]);
+      
 
       // 通知Upload receiver
       Intent broadCastIntent = new Intent(ConfigUtil.ACTION_UPLOAD);
@@ -168,9 +165,11 @@ public class UploadService extends Service {
       sendBroadcast(broadCastIntent);
       stop = false;
 
-      videoInfo.setUserId(ccAccountInfo.split(";")[1]);
+      String ccUserId = intent.getStringExtra("CCUserID");
+      videoInfo.setUserId(ccUserId);
 
-      uploader = new Uploader(videoInfo, ccAccountInfo.split(";")[0]);
+      String ccUserKey = intent.getStringExtra("CCUserKey");
+      uploader = new Uploader(videoInfo, ccUserKey);
       uploader.setUploadListener(uploadListenner);
       uploader.start();
     } catch (Exception e) {
