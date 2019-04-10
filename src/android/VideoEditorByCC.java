@@ -348,7 +348,7 @@ public class VideoEditorByCC extends CordovaPlugin {
         service.putExtra("uploadId", uploadId);
         service.putExtra("notifyUrl", videoInfo.getNotifyUrl());
         service.putExtra("CCUserID", options.optString("CCUserID", ""));
-        service.putExtra("CCUserKey", options.optString("CCUserID", ""));
+        service.putExtra("CCUserKey", options.optString("CCUserKey", ""));
         cordova.getActivity().startService(service);
       }
     } catch (Exception e) {
