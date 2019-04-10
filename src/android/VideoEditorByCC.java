@@ -347,7 +347,8 @@ public class VideoEditorByCC extends CordovaPlugin {
         service.putExtra("filePath", videoInfo.getFilePath());
         service.putExtra("uploadId", uploadId);
         service.putExtra("notifyUrl", videoInfo.getNotifyUrl());
-
+        service.putExtra("CCUserID", options.optString("CCUserID", ""));
+        service.putExtra("CCUserKey", options.optString("CCUserID", ""));
         cordova.getActivity().startService(service);
       }
     } catch (Exception e) {
@@ -376,7 +377,7 @@ public class VideoEditorByCC extends CordovaPlugin {
     JSONObject options = args.optJSONObject(0);
     String ccUserId = options.optString("CCUserId", "");
     String ccUserKey = options.optString("CCUserKey", "");
-    
+
     List<UploadInfo> uploadInfos = DataSet.getUploadInfos();
     boolean flag = false;
     // 获取数据库中存储的视频状态，若未上传完成，则触发断点续传
