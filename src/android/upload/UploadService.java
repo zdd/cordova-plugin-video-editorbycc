@@ -29,7 +29,7 @@ import org.apache.cordova.videoeditorbycc.util.ParamsUtil;
  *
  */
 public class UploadService extends Service {
-
+  private static String TAG = "UploadService";
 	private final int NOTIFY_ID = 10;
 
 	private Context context;
@@ -117,15 +117,15 @@ public class UploadService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		Log.i("service", "start service");
+		Log.i(TAG, "start service");
 
 		if (intent == null) {
-			Log.i("upload service", "intent is null");
+			Log.i(TAG, "intent is null");
 			return Service.START_STICKY;
 		}
 
 		if (uploader != null) {
-			Log.i("upload service", "uploader is working.");
+			Log.i(TAG, "uploader is working.");
 			return Service.START_STICKY;
 		}
 
@@ -173,7 +173,7 @@ public class UploadService extends Service {
       uploader.setUploadListener(uploadListenner);
       uploader.start();
     } catch (Exception e) {
-      e.printStackTrace();
+      Log.e(TAG, e.getLocalizedMessage());
     }
 
 		Log.i("init " + videoInfo.getTitle(), "uploadId: " + uploadId);

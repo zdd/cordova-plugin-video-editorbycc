@@ -215,14 +215,6 @@ public class VideoEditorByCC extends CordovaPlugin {
       Log.d(TAG, "outputFilePath: " + outputFilePath);
 
       final boolean deleteInputFile = options.optBoolean("deleteInputFile", false);
-//      final int width = options.optInt("width", 0);
-//      final int height = options.optInt("height", 0);
-//      final int fps = options.optInt("fps", 24);
-//      final int videoBitrate = options.optInt("videoBitrate", 1000000); // default to 1 megabit
-//      final int audioBitrate = options.optInt("audioBitrate", 128000); // default to 1 megabit
-//      final int audioChannels = options.optInt("audioChannels", 2); // default to 1 megabit
-//      final int audioSampleRate = options.optInt("audioSampleRate", 44100); // default to 1 megabit
-//      final long videoDuration = options.optLong("duration", 0) * 1000 * 1000;
       final int quality = options.optInt("quality", 3);
 
       // 视频压缩回调函数
@@ -352,6 +344,7 @@ public class VideoEditorByCC extends CordovaPlugin {
         cordova.getActivity().startService(service);
       }
     } catch (Exception e) {
+      Log.e(TAG, "Exception in uploadVideo: " + e.getLocalizedMessage());
       callback.error(e.toString());
     }
   }
@@ -374,10 +367,11 @@ public class VideoEditorByCC extends CordovaPlugin {
    * 若有未上传完成的视频，则触发断点续传
    */
   private void reUploadVideo(JSONArray args) {
-    JSONObject options = args.optJSONObject(0);
-    String ccUserId = options.optString("CCUserId", "");
-    String ccUserKey = options.optString("CCUserKey", "");
 
+    JSONObject options = args.optJSONObject(0);
+    String ccUserId = options.optString("CCUserID", "");
+    String ccUserKey = options.optString("CCUserKey", "");
+    Log.d(TAG, "reUpload start..." + "CCUSerID: " + ccUserId + " CCUserKey: " + ccUserKey);
     List<UploadInfo> uploadInfos = DataSet.getUploadInfos();
     boolean flag = false;
     // 获取数据库中存储的视频状态，若未上传完成，则触发断点续传
@@ -396,6 +390,7 @@ public class VideoEditorByCC extends CordovaPlugin {
         jsonObj.put("info", "不存在未上传完成的视频");
         callback.error(jsonObj);
       } catch (JSONException e) {
+        Log.e(TAG, "Exception in reUploadVideo: " + e.getLocalizedMessage());
         e.printStackTrace();
         callback.error(e.toString());
       }
@@ -521,7 +516,6 @@ public class VideoEditorByCC extends CordovaPlugin {
           jsonObj.put("status", Uploader.UPLOAD);
           jsonObj.put("progress", progress);
           jsonObj.put("uploadId", currentUploadId);
-          jsonObj.put("zdd", "my name is zdd");
           jsonObj.put("notifyUrl", intent.getStringExtra("notifyUrl")); // For debug only.
 
           PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
@@ -545,19 +539,31 @@ public class VideoEditorByCC extends CordovaPlugin {
         // 若出现异常，提示用户处理
         int errorCode = intent.getIntExtra("errorCode", ParamsUtil.INVALID);
         if (errorCode == ErrorCode.NETWORK_ERROR.Value()) {
+          binder.cancle();
+          Log.e(TAG, "网络异常，请检查");
+
           jsonObj.put("status", "500");
           jsonObj.put("info", "网络异常，请检查");
           callback.error(jsonObj);
         } else if (errorCode == ErrorCode.PROCESS_FAIL.Value()) {
+          binder.cancle();
+          Log.e(TAG, "上传失败，请重试");
+
           jsonObj.put("status", "500");
           jsonObj.put("info", "上传失败，请重试");
           callback.error(jsonObj);
         } else if (errorCode == ErrorCode.INVALID_REQUEST.Value()) {
+          binder.cancle();
+          Log.e(TAG, "上传失败，请检查账户信息");
+
           jsonObj.put("status", "500");
           jsonObj.put("info", "上传失败，请检查账户信息");
           callback.error(jsonObj);
         }
       } catch (Exception e) {
+        binder.cancle();
+        Log.e(TAG, "Exception in onRecieve: " + e.getLocalizedMessage());
+
         callback.error(e.toString());
       }
     }
